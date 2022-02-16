@@ -1,12 +1,11 @@
-import { Body, Controller, Post } from "@nestjs/common";
-import { RegisterUserDto } from "src/users/dto/register-user.dto";
-import { UsersService } from "src/users/users.service";
-import { LoginDTO } from "./login.dto";
+import {  Body, Controller, Post , ValidationPipe } from "@nestjs/common";
+import { RegisterUserDto } from "../users/dto/register-user.dto";
+import { UsersService } from "../users/users.service";
 import { AuthService } from "./auth.service";
-import { ApiBadRequestResponse, ApiBasicAuth, ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiHeader, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
-import { LoginUserDto } from "src/users/dto/login-user.dto";
-
-
+import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiInternalServerErrorResponse, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { LoginUserDto } from "../users/dto/login-user.dto";
+import { createdResponse } from "src/users/dto/created-response.dto";
+import { loginResponse } from "src/users/dto/login-response.dto";
 
 @Controller('auth') 
 @ApiTags('users')
@@ -19,38 +18,31 @@ export class AuthController{
 
 
     @Post('register')
-    @ApiCreatedResponse({ status: 201,type: RegisterUserDto})
+    @ApiCreatedResponse({ status: 201,type: createdResponse})
     @ApiBody({type: RegisterUserDto})
     @ApiOperation({ summary: 'Register A New User' })
-
-    async register(@Body() RegisterUserDto: RegisterUserDto) {
-        const user = await this.userService.create(RegisterUserDto)
-        const payload = {
-            email: user.email,
-        };
+    
+    async register( @Body() Body: RegisterUserDto){
+       const user = await this.userService.create({...Body,});
+        const payload = { email: user.email, Role: user.Role};
         const token = await this.authService.singPayload(payload);
         return { user, token };
     }
 
 
     @Post('login')
-    @ApiOkResponse({description: 'OK', type: LoginUserDto})
+    @ApiOkResponse({description: 'OK', type: loginResponse})
     @ApiBody({type: LoginUserDto})
     @ApiBearerAuth('access-token')
-    @ApiNotFoundResponse({description: 'Not Found.!'})
-    @ApiBadRequestResponse({description: 'Bad Requist.'})
+    @ApiBadRequestResponse({description: 'Bad Request.'})
     @ApiInternalServerErrorResponse({description: 'Internal Server Error.'})
     @ApiOperation({ summary: 'Logging In' })
-    async login(@Body() UserDTO: LoginDTO) {
+    async login(@Body(new ValidationPipe()) UserDTO: LoginUserDto) {
         const user = await this.userService.login(UserDTO);
-        const payload = { email: user.email};
+        const payload = { email: user.email, Role: user.Role};
 
         const token = await this.authService.singPayload(payload);
         return { user, token}
     }
 
-}
-
-function jwt(jwt: any) {
-    throw new Error("Function not implemented.");
 }

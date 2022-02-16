@@ -18,6 +18,8 @@ export class Cat {
     @Prop()
     furColor: string;
 
+    @Prop()
+    image?: string;
 }
 
 

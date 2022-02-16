@@ -3,15 +3,18 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.use(helmet())
+  app.enableCors()
   app.setGlobalPrefix('api');
   app.useGlobalPipes( new ValidationPipe())
 
   const config = new DocumentBuilder()
-        .setTitle('Pet Store')
+        .setTitle('Pets')
         .setDescription('Simple Rest API...')
         .setVersion('1.0')
         .addBearerAuth(
@@ -30,6 +33,6 @@ async function bootstrap() {
         const document = SwaggerModule.createDocument(app, config);
         SwaggerModule.setup('/docs', app, document); 
 
-  await app.listen(8080);
+  await app.listen(8044);
 }
 bootstrap();

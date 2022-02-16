@@ -1,8 +1,9 @@
 import * as mongoose from 'mongoose'
 import * as bcrypt from 'bcrypt'
 
-export const UserSchema = new mongoose.Schema({
-    userName: {
+
+export const userSchema = new mongoose.Schema({
+    name: {
         type: String,
         unique: true,
         required: true
@@ -15,10 +16,22 @@ export const UserSchema = new mongoose.Schema({
     password: { 
         type: String,
         required: true
+    },
+    Role: {
+        type: [String],
+        default: 'user',
+        enum: ['user', 'admin']
     }
-})
+},
+{toJSON:{
+    transform(doc, ret) {
+        delete ret.password;
+        delete ret.__v;
+    }
+}})
 
-UserSchema.pre('save', async function( next) {
+
+userSchema.pre('save', async function( next) {
     try{
         if(!this.isModified('password')){
             return next();
@@ -31,3 +44,5 @@ UserSchema.pre('save', async function( next) {
     }
     
 });
+
+export const User = mongoose.model('User', userSchema);

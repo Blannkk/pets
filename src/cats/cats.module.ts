@@ -6,13 +6,11 @@ import { Cat, CatSchema } from './models/cat.schema';
 import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Cat.name, schema: CatSchema }]),
-        
-        MulterModule.register({
-          dest: './uploads'
-        })
+  imports: [
+    MongooseModule.forFeature([{ name: Cat.name, schema: CatSchema }]),
+    MulterModule.register({ dest: './uploads' }),
   ],
   controllers: [CatsController],
-  providers: [CatsService]
+  providers: [CatsService ]
 })
 export class CatsModule {}

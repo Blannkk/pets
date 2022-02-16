@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Res, HttpStatus, NotFoundException, Req, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, HttpStatus, NotFoundException, UseInterceptors, UploadedFile, UseGuards, ForbiddenException, Req, Res, SetMetadata } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { ExpressAdapter, FileInterceptor } from '@nestjs/platform-express';
 import { ApiBadRequestResponse, ApiBody, ApiConsumes, ApiCreatedResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiProduces, ApiTags } from '@nestjs/swagger';
+import { UsersService } from 'src/users/users.service';
 import { CatsService } from './cats.service';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { UpdateCatDto } from './dto/update-cat.dto';
 import { Cat } from './models/cat.schema';
+import RoleGuard from 'src/auth/guards/role.guard';
+import Role from 'src/auth/enum/role.enum';
 
 
 @Controller('cats')
@@ -13,18 +17,25 @@ import { Cat } from './models/cat.schema';
 @ApiConsumes('application/json')
 @ApiProduces('application/json')
 export class CatsController {
-  constructor(private readonly catsService: CatsService) {}
+  constructor(
+    private readonly catsService: CatsService) {}
 
   
+  @UseGuards(RoleGuard(Role.Admin))
   @UseGuards(AuthGuard('jwt'))
   @ApiCreatedResponse({ status: 201,type: CreateCatDto})
   @ApiBody({type: CreateCatDto})
   @ApiOperation({ summary: 'Create cat.' })
   @Post()
-  async create(
+  @UseInterceptors(FileInterceptor('image'))
+  async create(@Req() req: Request,
+    @UploadedFile() file,
     @Res() res ,
     @Body() Body: CreateCatDto): Promise<Cat> {
-    const createdCat = await this.catsService.create(Body);
+    const createdCat = await this.catsService.create({
+      ...Body,
+      image: file?.filename,
+    });
     return res.status(HttpStatus.CREATED).json(createdCat);
   }
 
@@ -44,7 +55,7 @@ export class CatsController {
     type: Cat,
   })
   @ApiNotFoundResponse({description: 'Not Found.!'})
-  @ApiBadRequestResponse({description: 'Bad Requist.'})
+  @ApiBadRequestResponse({description: 'Bad Request.'})
   @ApiInternalServerErrorResponse({description: 'Internal Server Error.'})
   @ApiOperation({
     summary: 'Get Cat by id',
@@ -69,7 +80,7 @@ export class CatsController {
   @ApiOkResponse({description: 'OK',type: UpdateCatDto })
   @ApiBody({type: UpdateCatDto})
   @ApiNotFoundResponse({description: 'Not Found.!'})
-  @ApiBadRequestResponse({description: 'Bad Requist.'})
+  @ApiBadRequestResponse({description: 'Bad Request.'})
   @ApiInternalServerErrorResponse({description: 'Internal Server Error.'})
   @ApiOperation({
     summary: 'Update Cat by id',
@@ -90,12 +101,12 @@ export class CatsController {
   }
 
 
-    @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'))
   @ApiOkResponse({
     description: 'OK',
     type: Cat })
   @ApiNotFoundResponse({description: 'Not Found.!'})
-  @ApiBadRequestResponse({description: 'Bad Requist.'})
+  @ApiBadRequestResponse({description: 'Bad Request.'})
   @ApiInternalServerErrorResponse({description: 'Internal Server Error.'})
   @ApiOperation({
     summary: 'Delete Cat by id',
@@ -114,9 +125,9 @@ export class CatsController {
     return res.status(HttpStatus.OK).json(deletedCat);
   }
 
-  @Post('/upload')
-  @UseInterceptors(FileInterceptor('image'))
-  uploadFile(@UploadedFile() file: Express.Multer.File){
-    return file;
-  }
+  // @Post('/upload')
+  // @UseInterceptors(FileInterceptor('image'))
+  // uploadFile(@UploadedFile() file: Express.Multer.File){
+  //   return file;
+  // }
 }  
